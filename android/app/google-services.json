@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "463821131261",
+    "project_id": "gocab-3ba80",
+    "storage_bucket": "gocab-3ba80.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463821131261:android:7e76d4d8e731fef2911d94",
+        "android_client_info": {
+          "package_name": "com.example.gocab2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "463821131261-9qfuarhcc6vgg6ohdu95s5nmknlumgf1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.gocab2",
+            "certificate_hash": "01b9d817e3e0baa1570ccc6be361d765c3cd7144"
+          }
+        },
+        {
+          "client_id": "463821131261-t5cpgmrk3fn6n81dulrn7ec8v2qvck9m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAauiGJjg2tlj6fh3QrO72OTDEapd6VHFs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "463821131261-t5cpgmrk3fn6n81dulrn7ec8v2qvck9m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
