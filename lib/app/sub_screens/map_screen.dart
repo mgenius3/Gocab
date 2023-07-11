@@ -1,6 +1,8 @@
 import 'package:Gocab/Assistants/assistant_method.dart';
 import 'package:Gocab/app/sub_screens/search_places_screen.dart';
+import 'package:Gocab/widget/progress_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 import 'package:location/location.dart' as loc;
@@ -12,6 +14,8 @@ import "../../global/global.dart";
 import '../../model/direction.dart';
 import "package:provider/provider.dart";
 import "../../infoHandler/app_info.dart";
+import "./precise_pickup_location.dart";
+import "./drawer_screen.dart";
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -95,6 +99,106 @@ class _MapScreenState extends State<MapScreen> {
     //AssistantMethods.readTripKeysForOnlineUser(context);
   }
 
+  Future<void> drawPolyLineFromOriginToDestination(darkTheme) async {
+    var originPosition =
+        Provider.of<AppInfo>(context, listen: false).userPickUpLocation;
+    var destinationPosition =
+        Provider.of<AppInfo>(context, listen: false).userDropOffLocation;
+
+    print("---------------polyline--------------------");
+    print(originPosition);
+    print(destinationPosition);
+
+    var originLatLng = LatLng(
+        originPosition!.locationLatitude!, originPosition!.locationLongitude!);
+    var destinationLatLng = LatLng(destinationPosition!.locationLatitude!,
+        destinationPosition!.locationLongitude!);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => ProgressDialog(
+        message: "Please wait...",
+      ),
+    );
+
+    var directionDetailsInfo =
+        await AssistantMethods.obtainOriginToDestinationDirectionDetails(
+            originLatLng, destinationLatLng);
+    setState(() {});
+
+    Navigator.pop(context);
+
+    PolylinePoints pPoints = PolylinePoints();
+    List<PointLatLng> decodePolyLInePointsResultList =
+        pPoints.decodePolyline(directionDetailsInfo.e_points!);
+
+    pLineCoordinatedList.clear();
+
+    if (decodePolyLInePointsResultList.isNotEmpty) {
+      decodePolyLInePointsResultList.forEach((PointLatLng pointLatLng) {
+        pLineCoordinatedList
+            .add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
+      });
+    }
+
+    polylineSet.clear();
+
+    setState(() {
+      Polyline polyline = Polyline(
+        // color: darkTheme ? Colors.amberAccent : Colors.blue,
+        color: Colors.black,
+        polylineId: PolylineId("polylineID"),
+        jointType: JointType.round,
+        points: pLineCoordinatedList,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
+        geodesic: true,
+        width: 5,
+      );
+
+      polylineSet.add(polyline);
+    });
+
+    LatLngBounds boundsLatLng;
+    if (originLatLng.latitude > destinationLatLng.latitude &&
+        originLatLng.longitude > destinationLatLng.longitude) {
+      boundsLatLng =
+          LatLngBounds(southwest: destinationLatLng, northeast: originLatLng);
+    } else if (originLatLng.longitude > destinationLatLng.longitude) {
+      boundsLatLng = LatLngBounds(
+        southwest: LatLng(originLatLng.latitude, destinationLatLng.longitude),
+        northeast: LatLng(destinationLatLng.latitude, originLatLng.longitude),
+      );
+    } else {
+      boundsLatLng =
+          LatLngBounds(southwest: originLatLng, northeast: destinationLatLng);
+    }
+
+    newGoogleMapController!
+        .animateCamera(CameraUpdate.newLatLngBounds(boundsLatLng, 65));
+
+    Marker originMarker = Marker(
+      markerId: MarkerId("originID"),
+      infoWindow:
+          InfoWindow(title: originPosition.locationName, snippet: "Origin"),
+      position: originLatLng,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+    );
+
+    Marker destinationMarker = Marker(
+      markerId: MarkerId("destinationID"),
+      infoWindow: InfoWindow(
+          title: destinationPosition.locationName, snippet: "Destination"),
+      position: destinationLatLng,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+    );
+
+    setState(() {
+      markerSet.add(originMarker);
+      markerSet.add(destinationMarker);
+    });
+  }
+
   getAddressFromLatLng() async {
     try {
       print(pickLocation!.latitude);
@@ -140,15 +244,19 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool darkTheme =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
+        key: _scaffoldState,
+        drawer: DrawerScreen(),
         body: Stack(
           children: [
             GoogleMap(
-              padding: EdgeInsets.only(bottom: 200),
+              padding: EdgeInsets.only(bottom: 180, top: 50),
               mapType: MapType.normal,
               myLocationEnabled: true,
               zoomGesturesEnabled: true,
@@ -180,6 +288,19 @@ class _MapScreenState extends State<MapScreen> {
                   padding: const EdgeInsets.only(bottom: 35.0),
                   child: Image.asset("images/pick.png", height: 45, width: 45),
                 )),
+
+            //CUSTOM HAMBURGER BUTTON FOR DRAWER
+            Positioned(
+                top: 50,
+                left: 20,
+                child: Container(
+                    child: GestureDetector(
+                  onTap: () {
+                    _scaffoldState.currentState!.openDrawer();
+                  },
+                  child: CircleAvatar(
+                      child: Icon(Icons.menu, color: Colors.white)),
+                ))),
 
             //UI for searching location
             Positioned(
@@ -231,7 +352,7 @@ class _MapScreenState extends State<MapScreen> {
                                                                     context)
                                                                 .userPickUpLocation!
                                                                 .locationName)!
-                                                            .substring(0, 24) +
+                                                            .substring(0, 40) +
                                                         "..."
                                                     : "Not getting address",
                                                 style: TextStyle(
@@ -254,14 +375,22 @@ class _MapScreenState extends State<MapScreen> {
                                       child: GestureDetector(
                                         onTap: () async {
                                           //go to search places screen
-                                          var responseFromSearchScreen = await Navigator.push(context, MaterialPageRoute(builder: (c) => SearchPlacesScreen()));
+                                          var responseFromSearchScreen =
+                                              await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (c) =>
+                                                          SearchPlacesScreen()));
 
-                                          if(responseFromSearchScreen == "obtainedDropoff"){
-                                            setState((){
+                                          if (responseFromSearchScreen ==
+                                              "obtainedDropoff") {
+                                            setState(() {
                                               openNavigationDrawer = false;
                                             });
                                           }
 
+                                          await drawPolyLineFromOriginToDestination(
+                                              darkTheme);
                                         },
                                         child: Row(
                                           children: [
@@ -282,12 +411,12 @@ class _MapScreenState extends State<MapScreen> {
                                                                     context)
                                                                 .userDropOffLocation !=
                                                             null
-                                                        ? (Provider.of<AppInfo>(
-                                                                        context)
-                                                                    .userDropOffLocation!
-                                                                    .locationName)!
+                                                        ? Provider.of<AppInfo>(
+                                                                    context)
+                                                                .userDropOffLocation!
+                                                                .locationName!
                                                                 .substring(
-                                                                    0, 24) +
+                                                                    0, 40) +
                                                             "..."
                                                         : "Where to?",
                                                     style: TextStyle(
@@ -299,7 +428,48 @@ class _MapScreenState extends State<MapScreen> {
                                         ),
                                       ))
                                 ],
-                              ))
+                              )),
+                          SizedBox(height: 5),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (c) =>
+                                              PrecisePickUpScreen()));
+                                },
+                                child: Text(
+                                  "Change Pick Up",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  textStyle: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              ElevatedButton(
+                                onPressed: () {},
+                                child: Text(
+                                  "Request a ride",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  textStyle: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
                         ]),
                       )
                     ],

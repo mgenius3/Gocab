@@ -8,11 +8,12 @@ import 'package:provider/provider.dart';
 import '../global/global.dart';
 import './progress_dialog.dart';
 import 'package:Gocab/global/map_key.dart';
+import 'dart:developer';
 
 class PlacePredictionTileDesign extends StatefulWidget {
   final PredictedPlaces? predictedPlaces;
 
-  PlacePredictionTileDesign({this.predictedPlaces});
+  PlacePredictionTileDesign({required this.predictedPlaces});
 
   @override
   State<PlacePredictionTileDesign> createState() =>
@@ -20,36 +21,46 @@ class PlacePredictionTileDesign extends StatefulWidget {
 }
 
 class _PlacePredictionTileDesignState extends State<PlacePredictionTileDesign> {
+  getPlacesDirectionDetails(String? placeId, context) async {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) => ProgressDialog(
+              message: "Setting up Drop-off. Please wait....",
+            ));
 
-  getPlacesDirectionDetails(String? placeId, context) async{
-    showDialog(context: context,
-    builder: (BuildContext context) => ProgressDialog(message:  "Setting up Drop-off. Please wait....",
-    ));
+    String getPlacesDirectionDetailsUrl =
+        "https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$mapkey";
 
-    String getPlacesDirectionDetailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$mapkey";
-
-    var responseApi = await RequestAssistant.receiveRequest(getPlacesDirectionDetailsUrl);
+    var responseApi =
+        await RequestAssistant.receiveRequest(getPlacesDirectionDetailsUrl);
 
     Navigator.pop(context);
 
-    if(responseApi == "Error Occured: Failed, No response."){
+    if (responseApi == "Error Occured: Failed, No response.") {
       return;
     }
 
-    if(responseApi["status"] == "OK"){
+    if (responseApi["status"] == "OK") {
       Directions directions = Directions();
-      directions.locationName = responseApi["results"]["name"];
+      print("$responseApi");
+      // directions.locationName = responseApi["result"]["long_name"];
+      directions.locationName = responseApi["result"]["formatted_address"];
+
       directions.locationId = placeId;
-      directions.locationLatitude = responseApi["result"]["geometry"]["location"]["lat"];
+      directions.locationLatitude =
+          responseApi["result"]["geometry"]["location"]["lat"];
 
-      directions.locationLongitude = responseApi["result"]["geometry"]["location"]["lng"];
+      directions.locationLongitude =
+          responseApi["result"]["geometry"]["location"]["lng"];
 
-      Provider.of<AppInfo>(context, listen: false).updateDropOffLocationAddress(directions);
+      Provider.of<AppInfo>(context, listen: false)
+          .updateDropOffLocationAddress(directions);
 
+      print("57 ${directions.toString()}");
       setState(() {
         userDropOffAddress = directions.locationName!;
       });
-       Navigator.pop(context, "obtainedDropoff");
+      Navigator.pop(context, "obtainedDropoff");
     }
   }
 
@@ -58,20 +69,16 @@ class _PlacePredictionTileDesignState extends State<PlacePredictionTileDesign> {
     bool darkTheme =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
 
-    return ElevatedButton(
-      onPressed: () {
+    return GestureDetector(
+      onTap: () {
         getPlacesDirectionDetails(widget.predictedPlaces!.place_id, context);
       },
-      style: ElevatedButton.styleFrom(
-        primary: darkTheme ? Colors.black : Colors.white,
-      ),
       child: Padding(
-        padding: EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(18.0),
         child: Row(
           children: [
             Icon(
               Icons.add_location,
-              color: darkTheme ? Colors.amber.shade400 : Colors.blue,
             ),
             SizedBox(
               width: 10,
@@ -84,7 +91,6 @@ class _PlacePredictionTileDesignState extends State<PlacePredictionTileDesign> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 16,
-                      color: darkTheme ? Colors.amber.shade400 : Colors.blue,
                     ),
                   ),
                   Text(
@@ -92,7 +98,6 @@ class _PlacePredictionTileDesignState extends State<PlacePredictionTileDesign> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 16,
-                      color: darkTheme ? Colors.amber.shade400 : Colors.blue,
                     ),
                   ),
                 ],

@@ -8,6 +8,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:Gocab/app/sub_screens/forgot_password.dart';
+import 'package:Gocab/app/sub_screens/map_screen.dart';
 
 class EmailSignInForm extends StatefulWidget {
   EmailSignInForm({required this.auth});
@@ -33,7 +34,8 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
       await Fluttertoast.showToast(msg: "Successfully Logged In");
 
       Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
-        builder: (context) => BookingPage(),
+        // builder: (context) => BookingPage(),
+        builder: (context) => MapScreen(),
         fullscreenDialog: true,
       ));
     } catch (e) {

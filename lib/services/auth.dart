@@ -23,8 +23,6 @@ class Auth implements AuthBase {
   final _firebaseAuth = FirebaseAuth.instance;
 
   User _userFromFirebase(user) {
-    print(user);
-
     if (user == null) {
       // Throw an exception
       throw Exception('User is null');
@@ -84,7 +82,6 @@ class Auth implements AuthBase {
   @override
   Future<User> createUserWithEmailAndPassword(
       Map<String, dynamic> userMap) async {
-    print("87");
     print(userMap['password'].toString());
     final authResult = await _firebaseAuth.createUserWithEmailAndPassword(
       email: userMap['email'].toString(),
@@ -98,8 +95,9 @@ class Auth implements AuthBase {
     return _userFromFirebase(authResult.user);
   }
 
-  Future<void> createUserProfile(currentUser, Map<String, dynamic> userMap) async {
-    if (currentUser != null ) {
+  Future<void> createUserProfile(
+      currentUser, Map<String, dynamic> userMap) async {
+    if (currentUser != null) {
       DatabaseReference userRef =
           FirebaseDatabase.instance.ref().child("users");
       userMap.addAll({"id": currentUser.uid});

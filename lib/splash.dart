@@ -10,6 +10,7 @@ import 'package:Gocab/app/main_screen/index.dart';
 import 'package:Gocab/app/auth/signIn/email_sign_in_page.dart';
 import 'package:Gocab/app/sub_screens/map_screen.dart';
 import 'package:Gocab/app/sub_screens/search_places_screen.dart';
+import 'package:provider/provider.dart';
 
 class Splash extends StatefulWidget {
   const Splash({Key? key}) : super(key: key);
