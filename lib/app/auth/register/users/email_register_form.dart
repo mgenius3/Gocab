@@ -33,13 +33,14 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
   //declare a Global key
   final _formkey = GlobalKey<FormState>();
 
-  // String? email;
-  // String get _email => _emailController.text;
-  // String get _password => _passwordController.text;
+  bool loading = false;
 
   void _submit() async {
     try {
       if (_formkey.currentState!.validate()) {
+        setState(() {
+          loading = true;
+        });
         Map<String, dynamic> userMap = {
           "name": nameTextEditingController.text.trim(),
           "email": _emailTextController.text.trim(),
@@ -53,11 +54,30 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
         Navigator.push(context, MaterialPageRoute(builder: (c) => MapScreen()));
       } else {
         await Fluttertoast.showToast(msg: "Enter valid details");
+        loading = false;
       }
       // Navigator.of(context).pop();
     } catch (e) {
-      print(e.toString());
-      await Fluttertoast.showToast(msg: "Failed registration ${e.toString()}");
+      String errorMessage = e.toString();
+// Find the position of the opening bracket
+      int startIndex = errorMessage.indexOf("[");
+// Find the position of the closing bracket
+      int endIndex = errorMessage.indexOf("]");
+
+// Extract the error code substring
+      String errorCode = errorMessage.substring(startIndex + 1, endIndex);
+
+// Find the position of the first space after the closing bracket
+      int spaceIndex = errorMessage.indexOf(" ", endIndex);
+
+// Extract the error message substring
+      String extractedErrorMessage = errorMessage.substring(spaceIndex + 1);
+
+      await Fluttertoast.showToast(
+          msg: "Failed Registration: $extractedErrorMessage");
+      setState(() {
+        loading = false;
+      });
     }
   }
 
@@ -69,6 +89,13 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Container(child: Image.asset("images/logo.png")),
+            SizedBox(height: 26),
+            Text(
+              "Register",
+              style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 26),
             TextFormField(
               decoration: InputDecoration(
                 labelText: 'Name',
@@ -122,7 +149,7 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
             SizedBox(height: 16.0),
             IntlPhoneField(
               showCountryFlag: true,
-              initialCountryCode: "234",
+              initialCountryCode: "NG",
               dropdownIcon: Icon(
                 Icons.arrow_drop_down,
               ),
@@ -179,7 +206,6 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
                 ),
                 border:
                     OutlineInputBorder(), // Set the border to a rectangular shape
-                prefixIcon: Icon(Icons.password),
               ),
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (text) {
@@ -215,7 +241,6 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
                 ),
                 border:
                     OutlineInputBorder(), // Set the border to a rectangular shape
-                prefixIcon: Icon(Icons.password),
               ),
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (text) {
@@ -237,37 +262,43 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
             ),
             SizedBox(height: 16.0),
             ElevatedButton(
-              onPressed: _submit,
+              onPressed: !loading ? _submit : null,
               child: Container(
+                height: 50,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.app_registration),
-                      onPressed: () {
-                        _submit();
-                      },
+                    TextButton(
+                      onPressed: !loading ? _submit : null,
+                      child: !loading
+                          ? Text(
+                              "Create Account",
+                              style: TextStyle(color: Colors.white),
+                            )
+                          : CircularProgressIndicator(
+                              color: Colors.white,
+                              backgroundColor: Color(0xFF0D47A1),
+                            ),
                     ),
-                    Text("Create Account")
                   ],
                 ),
               ),
             ),
             SizedBox(height: 16.0),
-            ElevatedButton.icon(
-              onPressed: () {
-                widget.auth.signInWithGoogle();
-                // Perform registration with Google logic here
-              },
-              icon: Image.asset('images/google.png',
-                  height: 24.0), // Replace with your Google icon
-              label: Text('Create Account with Google'),
-              style: ElevatedButton.styleFrom(
-                primary: Colors.red, // Customize the button background color
-                onPrimary: Colors.white, // Customize the button text color
-              ),
-            ),
-            SizedBox(height: 8.0),
+            // ElevatedButton.icon(
+            //   onPressed: () {
+            //     widget.auth.signInWithGoogle();
+            //     // Perform registration with Google logic here
+            //   },
+            //   icon: Image.asset('images/google.png',
+            //       height: 24.0), // Replace with your Google icon
+            //   label: Text('Create Account with Google'),
+            //   style: ElevatedButton.styleFrom(
+            //     primary: Colors.red, // Customize the button background color
+            //     onPrimary: Colors.white, // Customize the button text color
+            //   ),
+            // ),
+            // SizedBox(height: 8.0),
             TextButton(
               child: Text('Have an account? Sign in'),
               onPressed: () => Navigator.of(context).push(
@@ -287,10 +318,12 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        // mainAxisSize: MainAxisSize.min,
-        children: _buildChildren(),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          // mainAxisSize: MainAxisSize.min,
+          children: _buildChildren(),
+        ),
       ),
     );
   }

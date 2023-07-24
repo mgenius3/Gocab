@@ -24,7 +24,6 @@ class _SplashState extends State<Splash> {
   startTimer() {
     Timer(Duration(seconds: 3), () async {
       if (await FirebaseAuth.instance.currentUser != null) {
-        print(FirebaseAuth.instance.currentUser);
         FirebaseAuth.instance.currentUser != null
             ? AssistantMethods.readCurrentOnlineUserInfo()
             : null;
@@ -52,9 +51,11 @@ class _SplashState extends State<Splash> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF0D0B81),
       body: Padding(
         padding: const EdgeInsets.all(30.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(

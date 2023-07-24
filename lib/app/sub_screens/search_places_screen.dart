@@ -13,6 +13,8 @@ class SearchPlacesScreen extends StatefulWidget {
 
 class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
   List<PredictedPlaces> placesPredictedList = [];
+  TextEditingController? searchInput;
+  bool searching = false;
 
   findPlaceAutoCompleteSearch(String inputText) async {
     if (inputText.length > 1) {
@@ -90,8 +92,12 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
                                 child: Padding(
                                     padding: EdgeInsets.all(8),
                                     child: TextField(
+                                        controller: searchInput,
                                         onChanged: (value) {
                                           findPlaceAutoCompleteSearch(value);
+                                          setState(() {
+                                            searching = true;
+                                          });
                                         },
                                         decoration: InputDecoration(
                                             hintText: "Search location here...",
@@ -132,7 +138,13 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
                           );
                         },
                       ))
-                    : Container(),
+                    : Center(
+                        child: Container(
+                          child: !searching
+                              ? null
+                              : const CircularProgressIndicator(),
+                        ),
+                      ),
               ],
             )));
   }

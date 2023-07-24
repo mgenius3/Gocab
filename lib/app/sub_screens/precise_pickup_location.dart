@@ -128,16 +128,15 @@ class _PrecisePickUpScreenState extends State<PrecisePickUpScreen> {
           left: 20,
           child: Container(
               decoration: BoxDecoration(
-                  border: Border.all(color: Color.fromARGB(255, 23, 79, 110)),
-                  color: Colors.white),
+                  // border: Border.all(color: Color.fromARGB(255, 23, 79, 110)),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10)),
               padding: EdgeInsets.all(20),
               child: Text(
                 Provider.of<AppInfo>(context).userPickUpLocation != null
                     ? (Provider.of<AppInfo>(context)
-                                .userPickUpLocation!
-                                .locationName)!
-                            .substring(0, 24) +
-                        "..."
+                        .userPickUpLocation!
+                        .locationName)!
                     : "Not getting address",
                 overflow: TextOverflow.visible,
                 softWrap: true,

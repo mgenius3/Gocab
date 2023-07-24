@@ -3,6 +3,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:Gocab/helper/alertbox.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class User {
   User({required this.uid});
@@ -82,14 +84,12 @@ class Auth implements AuthBase {
   @override
   Future<User> createUserWithEmailAndPassword(
       Map<String, dynamic> userMap) async {
-    print(userMap['password'].toString());
     final authResult = await _firebaseAuth.createUserWithEmailAndPassword(
       email: userMap['email'].toString(),
       password: userMap['password'].toString(),
     );
     print(authResult);
     final currentUser = authResult.user;
-    print("95");
     //creating user profile after creating User with email and password
     createUserProfile(currentUser, userMap);
     return _userFromFirebase(authResult.user);
@@ -98,10 +98,25 @@ class Auth implements AuthBase {
   Future<void> createUserProfile(
       currentUser, Map<String, dynamic> userMap) async {
     if (currentUser != null) {
-      DatabaseReference userRef =
-          FirebaseDatabase.instance.ref().child("users");
-      userMap.addAll({"id": currentUser.uid});
-      userRef.child(currentUser!.uid).set(userMap);
+      try {
+        DatabaseReference userRef =
+            FirebaseDatabase.instance.ref().child("users");
+        userMap.addAll({"id": currentUser.uid});
+        userRef.child(currentUser!.uid).set(userMap);
+
+        // Retrieve the newly registered user's UID
+        String userUid = currentUser!.uid;
+
+        // Store additional user profile information in Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userUid)
+            .set(userMap);
+
+        Fluttertoast.showToast(msg: "registration successful");
+      } catch (err) {
+        Fluttertoast.showToast(msg: err.toString());
+      }
     }
   }
 

@@ -19,12 +19,8 @@ class EmailSignInForm extends StatefulWidget {
 
 class _EmailSignInFormState extends State<EmailSignInForm> {
   bool _isPasswordVisible = false;
-
   final _emailTextController = TextEditingController();
   final _passwordTextController = TextEditingController();
-
-  //declare a Global key
-  // final _formkey = GlobalKey<FormState>();
 
   void _submit() async {
     try {
@@ -45,6 +41,14 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
 
   List<Widget> _buildChildren() {
     return [
+      Container(child: Image.asset("images/logo.png")),
+      SizedBox(height: 26),
+      Text(
+        "Sign In",
+        style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+      ),
+      SizedBox(height: 36),
+
       TextFormField(
         decoration: InputDecoration(
           labelText: 'Email address',
@@ -102,22 +106,22 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
           },
           child: Text('Forgot Password ?')),
       SizedBox(height: 16.0),
-      ElevatedButton.icon(
-        onPressed: () {
-          widget.auth.signInWithGoogle();
-          // Perform registration with Google logic here
-        },
-        icon: Image.asset('images/google.png',
-            height: 24.0), // Replace with your Google icon
-        label: Text('Sign in with Google'),
-        style: ElevatedButton.styleFrom(
-          primary: Colors.red, // Customize the button background color
-          onPrimary: Colors.white, // Customize the button text color
-        ),
-      ),
+      // ElevatedButton.icon(
+      //   onPressed: () {
+      //     widget.auth.signInWithGoogle();
+      //     // Perform registration with Google logic here
+      //   },
+      //   icon: Image.asset('images/google.png',
+      //       height: 24.0), // Replace with your Google icon
+      //   label: Text('Sign in with Google'),
+      //   style: ElevatedButton.styleFrom(
+      //     primary: Colors.red, // Customize the button background color
+      //     onPrimary: Colors.white, // Customize the button text color
+      //   ),
+      // ),
       TextButton(
           child: Text('Need an account? Register'),
-          onPressed: () => Navigator.of(context).pushReplacement(
+          onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (context) => EmailRegisterPage(),
                   fullscreenDialog: true,

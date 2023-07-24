@@ -10,19 +10,59 @@ import '../model/direction_details_info.dart';
 import '../global/global.dart';
 import "package:provider/provider.dart";
 import "../infoHandler/app_info.dart";
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AssistantMethods {
   static void readCurrentOnlineUserInfo() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
-    DatabaseReference userRef =
-        FirebaseDatabase.instance.ref().child("users").child(currentUser!.uid);
-    userRef.once().then((snap) {
-      if (snap.snapshot.value != null) {
-        userModelCurrentInfo = UserModel.fromSnapshot(snap.snapshot);
-        print("22");
+
+    // var userRef =
+    //     FirebaseDatabase.instance.ref().child("users").child(currentUser!.uid);
+
+    // var snapshot = await userRef.once();
+
+    // userRef.once().then((snap) {
+    //   if (snap.snapshot.value != null) {
+    //     userModelCurrentInfo = UserModel.fromSnapshot(snap.snapshot);
+
+    //     return userModelCurrentInfo;
+    //   }
+    // });
+// Reference the "users" collection
+    CollectionReference usersRef =
+        FirebaseFirestore.instance.collection('users');
+
+    // Query the documents in the "users" collection based on ID
+    QuerySnapshot<Object?> snapshot =
+        await usersRef.where('id', isEqualTo: currentUser!.uid).get();
+
+    // Check if there is a matching document
+    if (snapshot.docs.isNotEmpty) {
+      try {
+        // Access the first matching document
+        DocumentSnapshot<Map<String, dynamic>> documentSnapshot =
+            snapshot.docs[0] as DocumentSnapshot<Map<String, dynamic>>;
+
+        // // Access the data of the matching document
+        // Map<String, dynamic> data = documentSnapshot.data()!;
+
+        print(documentSnapshot.get("phone"));
+        // print(data);
+        userModelCurrentInfo = UserModel.fromSnapshot(documentSnapshot);
+
+        // Extract specific fields from the data
+        // String id = data['id'];
+        // String name = data['name'];
+
         print(userModelCurrentInfo);
+
+        // Perform further operations with the data
+      } catch (err) {
+        print(err.toString());
       }
-    });
+    } else {
+      print('No matching document found');
+    }
   }
 
   static Future<String> searchAddressForGeographicCoordinates(
@@ -74,5 +114,22 @@ class AssistantMethods {
         responseDirectionApi["routes"][0]["legs"][0]["duration"]["value"];
 
     return directionDetailsInfo;
+  }
+
+  static double calculateFareAmountFromOriginToDestination(
+      DirectionDetailsInfo directionDetailsInfo) {
+    double timeTravelledFareAmountPerMinute =
+        (directionDetailsInfo.duration_value! / 60) * 0.1;
+
+    print(timeTravelledFareAmountPerMinute);
+    double distanceTravelledFareAmountPerKilometer =
+        (directionDetailsInfo.duration_value! / 1000) * 0.1;
+
+    //USD
+    double totalFareAmount = timeTravelledFareAmountPerMinute +
+        distanceTravelledFareAmountPerKilometer;
+    print(totalFareAmount);
+
+    return double.parse(totalFareAmount.toStringAsFixed(1));
   }
 }

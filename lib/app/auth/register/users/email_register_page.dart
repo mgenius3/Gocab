@@ -10,9 +10,19 @@ class EmailRegisterPage extends StatelessWidget {
           FocusScope.of(context).unfocus();
         },
         child: Scaffold(
+          // resizeToAvoidBottomInset: false,
           appBar: AppBar(
-            title: Text('Register'),
-            elevation: 2.0,
+            leading: IconButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: Icon(Icons.arrow_back_ios, color: Colors.black)),
+            backgroundColor: Colors.white,
+            // title: Text("Register",
+            //     style: TextStyle(
+            //         color: Colors.black, fontWeight: FontWeight.bold)),
+            centerTitle: true,
+            elevation: 0.0,
           ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),

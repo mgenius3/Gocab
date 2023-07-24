@@ -16,6 +16,13 @@ import "package:provider/provider.dart";
 import "../../infoHandler/app_info.dart";
 import "./precise_pickup_location.dart";
 import "./drawer_screen.dart";
+import "../../utils/helper.dart";
+import '../../helper/alertbox.dart';
+import 'package:flutter_geofire/flutter_geofire.dart';
+import '../../model/active_nearby_available_drivers.dart';
+import '../../Assistants/geofire_assistant.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -49,6 +56,7 @@ class _MapScreenState extends State<MapScreen> {
   double searchLocationcontaiinerHeight = 220;
   double waitingResponseFromDriverContainerHeight = 0;
   double assignedDriverInfoContainerHeight = 0;
+  double suggestedRidesContainerHeight = 0;
 
   Position? userCurrentPosition;
   var geoLocation = Geolocator();
@@ -67,8 +75,18 @@ class _MapScreenState extends State<MapScreen> {
 
   bool openNavigationDrawer = true;
   bool activeNearbyDriverKeysLoaded = false;
+  bool setDestinationActive = false;
 
   BitmapDescriptor? activeNearbyIcon;
+
+  DatabaseReference? referenceRideRequest;
+  String selectedVehicleType = " ";
+
+  String driverRideStatus = "Driver is on his way";
+
+  StreamSubscription<DatabaseEvent>? tripRidesRequestInfoStreamSubscription;
+
+  bool remove_bottomBar = false;
 
   locateUserPosition() async {
     Position cPosition = await Geolocator.getCurrentPosition(
@@ -88,15 +106,107 @@ class _MapScreenState extends State<MapScreen> {
         await AssistantMethods.searchAddressForGeographicCoordinates(
             userCurrentPosition!, context);
 
-    print("This is our address = " + humanReadableAddress);
-
     ///get user from database
     userName = userModelCurrentInfo!.name!;
     userEmail = userModelCurrentInfo!.email!;
 
-    // initializeGeoFireListener();
+    initializeGeoFireListener();
 
     //AssistantMethods.readTripKeysForOnlineUser(context);
+  }
+
+  initializeGeoFireListener() {
+    Geofire.initialize("activedDrivers");
+
+    Geofire.queryAtLocation(
+            userCurrentPosition!.latitude, userCurrentPosition!.longitude, 10)!
+        .listen((map) {
+      print(map);
+      if (map != null) {
+        var callBack = map["callBack"];
+
+        switch (callBack) {
+          //whenever any driver become active/online
+          case Geofire.onKeyEntered:
+            ActiveNearByAvailableDrivers activeNearByAvailableDrivers =
+                ActiveNearByAvailableDrivers();
+            activeNearByAvailableDrivers.locationLatitude = map["latitude"];
+            activeNearByAvailableDrivers.locationLatitude = map["longitude"];
+            activeNearByAvailableDrivers.driverId = map["key"];
+            GeoFireAssistant.activeNearByAvailableDriversList
+                .add(activeNearByAvailableDrivers);
+
+            if (activeNearbyDriverKeysLoaded == true) {
+              displayActiveDriversOnUsersMap();
+            }
+
+            break;
+
+          //whenever any driver becomes non-active
+          case Geofire.onKeyExited:
+            GeoFireAssistant.deleteOfflineDriverFromList(map["key"]);
+            displayActiveDriversOnUsersMap();
+            break;
+
+          //whenever driver moves - update driver location
+          case Geofire.onKeyMoved:
+            ActiveNearByAvailableDrivers activeNearByAvailableDrivers =
+                ActiveNearByAvailableDrivers();
+            activeNearByAvailableDrivers.locationLatitude = map["latitude"];
+            activeNearByAvailableDrivers.locationLatitude = map["longitude"];
+            activeNearByAvailableDrivers.driverId = map["key"];
+            displayActiveDriversOnUsersMap();
+            break;
+
+          //display those online active drivers on user's map
+          case Geofire.onGeoQueryReady:
+            activeNearbyDriverKeysLoaded = true;
+            displayActiveDriversOnUsersMap();
+            break;
+        }
+      }
+
+      setState(() {});
+    });
+  }
+
+  displayActiveDriversOnUsersMap() {
+    setState(() {
+      markerSet.clear();
+      circleSet.clear();
+
+      Set<Marker> driverMarkerSet = Set<Marker>();
+
+      for (ActiveNearByAvailableDrivers eachDriver
+          in GeoFireAssistant.activeNearByAvailableDriversList) {
+        LatLng eachDriverActivePosition =
+            LatLng(eachDriver.locationLatitude!, eachDriver.locationLongitude!);
+
+        Marker marker = Marker(
+          markerId: MarkerId(eachDriver.driverId!),
+          position: eachDriverActivePosition,
+          icon: activeNearbyIcon!,
+          rotation: 360,
+        );
+
+        driverMarkerSet.add(marker);
+      }
+
+      setState(() {
+        markerSet = driverMarkerSet;
+      });
+    });
+  }
+
+  createActiveNearByDriverIconMarker() {
+    if (activeNearbyIcon == null) {
+      ImageConfiguration imageConfiguration =
+          createLocalImageConfiguration(context, size: Size(0.2, 0.2));
+      BitmapDescriptor.fromAssetImage(imageConfiguration, "images/car.png")
+          .then((value) {
+        activeNearbyIcon = value;
+      });
+    }
   }
 
   Future<void> drawPolyLineFromOriginToDestination(darkTheme) async {
@@ -104,10 +214,6 @@ class _MapScreenState extends State<MapScreen> {
         Provider.of<AppInfo>(context, listen: false).userPickUpLocation;
     var destinationPosition =
         Provider.of<AppInfo>(context, listen: false).userDropOffLocation;
-
-    print("---------------polyline--------------------");
-    print(originPosition);
-    print(destinationPosition);
 
     var originLatLng = LatLng(
         originPosition!.locationLatitude!, originPosition!.locationLongitude!);
@@ -199,18 +305,20 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  void showSuggestedRidesContainer() {
+    setState(() {
+      suggestedRidesContainerHeight = 400;
+      bottomPaddingOfMap = 400;
+      remove_bottomBar = true;
+    });
+  }
+
   getAddressFromLatLng() async {
     try {
-      print(pickLocation!.latitude);
-      print(pickLocation!.longitude);
-      print("mapkey ${mapkey}");
-
       GeoData data = await Geocoder2.getDataFromCoordinates(
           latitude: pickLocation!.latitude,
           longitude: pickLocation!.longitude,
           googleMapApiKey: mapkey);
-
-      print("108 ${data}");
 
       setState(() {
         Directions userPickUpAddress = Directions();
@@ -236,6 +344,73 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  saveRideRequestInformation(String selectedVehicleType) {
+    //1. save the rideRequest information
+
+    referenceRideRequest =
+        FirebaseDatabase.instance.ref().child("All Ride Requests").push();
+
+    var originLocation =
+        Provider.of<AppInfo>(context, listen: false).userPickUpLocation;
+    var destinationLocation =
+        Provider.of<AppInfo>(context, listen: false).userDropOffLocation;
+
+    Map originLocationMap = {
+      //*key: value*
+      "latitude": originLocation!.locationLatitude.toString(),
+      "longitude": originLocation!.locationLongitude.toString()
+    };
+
+    Map destinationLocationMap = {
+      //*key: value*
+      "latitude": destinationLocation!.locationLatitude.toString(),
+      "longitude": destinationLocation!.locationLongitude.toString()
+    };
+
+    Map userInformationMap = {
+      "origin": originLocationMap,
+      "destination": destinationLocationMap,
+      "time": DateTime.now().toString(),
+      "userName": userModelCurrentInfo!.name,
+      "userPhone": userModelCurrentInfo!.phone,
+      "originAddress": originLocation.locationName,
+      "destinationAddress": destinationLocation.locationName
+    };
+
+    referenceRideRequest!.set(userInformationMap);
+
+    tripRidesRequestInfoStreamSubscription =
+        referenceRideRequest!.onValue.listen((eventSnap) async {
+      if (eventSnap.snapshot.value == null) {
+        return;
+      }
+      if ((eventSnap.snapshot.value as Map)["information"] != null) {
+        setState(() {
+          driverCarDetails =
+              (eventSnap.snapshot.value as Map)["information"].toString();
+        });
+      }
+      if ((eventSnap.snapshot.value as Map)["information"] != null) {
+        setState(() {
+          driverCarDetails =
+              (eventSnap.snapshot.value as Map)["information"].toString();
+        });
+      }
+      if ((eventSnap.snapshot.value as Map)["information"] != null) {
+        setState(() {
+          driverCarDetails =
+              (eventSnap.snapshot.value as Map)["information"].toString();
+        });
+      }
+      if ((eventSnap.snapshot.value as Map)["information"] != null) {
+        setState(() {
+          driverCarDetails =
+              (eventSnap.snapshot.value as Map)["information"].toString();
+        });
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -246,6 +421,8 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     bool darkTheme =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
+
+    createActiveNearByDriverIconMarker();
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -258,6 +435,7 @@ class _MapScreenState extends State<MapScreen> {
             GoogleMap(
               padding: EdgeInsets.only(bottom: 180, top: 50),
               mapType: MapType.normal,
+              myLocationButtonEnabled: true,
               myLocationEnabled: true,
               zoomGesturesEnabled: true,
               zoomControlsEnabled: true,
@@ -272,14 +450,14 @@ class _MapScreenState extends State<MapScreen> {
                 locateUserPosition();
               },
               onCameraMove: (CameraPosition? position) {
-                if (pickLocation != position!.target) {
+                if (!setDestinationActive && pickLocation != position!.target) {
                   setState(() {
                     pickLocation = position.target;
                   });
                 }
               },
               onCameraIdle: () {
-                getAddressFromLatLng();
+                setDestinationActive == true ? null : getAddressFromLatLng();
               },
             ),
             Align(
@@ -330,7 +508,7 @@ class _MapScreenState extends State<MapScreen> {
                                     padding: EdgeInsets.all(5),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.location_on_outlined),
+                                        Icon(Icons.my_location),
                                         SizedBox(
                                           width: 10,
                                         ),
@@ -338,26 +516,30 @@ class _MapScreenState extends State<MapScreen> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text("From",
+                                            Text("Pick Up",
                                                 style: TextStyle(
                                                     fontSize: 15,
                                                     color: Colors.blue,
                                                     fontWeight:
                                                         FontWeight.bold)),
                                             Text(
-                                                Provider.of<AppInfo>(context)
-                                                            .userPickUpLocation !=
-                                                        null
-                                                    ? (Provider.of<AppInfo>(
-                                                                    context)
-                                                                .userPickUpLocation!
-                                                                .locationName)!
-                                                            .substring(0, 40) +
-                                                        "..."
-                                                    : "Not getting address",
-                                                style: TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 14))
+                                              Provider.of<AppInfo>(context)
+                                                          .userPickUpLocation !=
+                                                      null
+                                                  ? shortenString(
+                                                      Provider.of<AppInfo>(
+                                                              context)
+                                                          .userPickUpLocation!
+                                                          .locationName
+                                                          .toString())
+                                                  : "Not getting address",
+                                              overflow: TextOverflow.fade,
+                                              softWrap: true,
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 14,
+                                              ),
+                                            )
                                           ],
                                         )
                                       ],
@@ -394,13 +576,13 @@ class _MapScreenState extends State<MapScreen> {
                                         },
                                         child: Row(
                                           children: [
-                                            Icon(Icons.location_on_outlined),
+                                            Icon(Icons.directions),
                                             SizedBox(width: 10),
                                             Column(
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                Text("To?",
+                                                Text("Destination?",
                                                     style: TextStyle(
                                                         fontSize: 15,
                                                         color: Colors.blue,
@@ -411,13 +593,16 @@ class _MapScreenState extends State<MapScreen> {
                                                                     context)
                                                                 .userDropOffLocation !=
                                                             null
-                                                        ? Provider.of<AppInfo>(
+                                                        // ? Provider.of<AppInfo>(
+                                                        //         context)
+                                                        //     .userDropOffLocation!
+                                                        //     .locationName!
+                                                        ? shortenString(Provider
+                                                                .of<AppInfo>(
                                                                     context)
-                                                                .userDropOffLocation!
-                                                                .locationName!
-                                                                .substring(
-                                                                    0, 40) +
-                                                            "..."
+                                                            .userDropOffLocation!
+                                                            .locationName!
+                                                            .toString())
                                                         : "Where to?",
                                                     style: TextStyle(
                                                         color: Colors.grey,
@@ -430,51 +615,232 @@ class _MapScreenState extends State<MapScreen> {
                                 ],
                               )),
                           SizedBox(height: 5),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (c) =>
-                                              PrecisePickUpScreen()));
-                                },
-                                child: Text(
-                                  "Change Pick Up",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  textStyle: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              ElevatedButton(
-                                onPressed: () {},
-                                child: Text(
-                                  "Request a ride",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  textStyle: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
+                          // Row(
+                          //   mainAxisAlignment: MainAxisAlignment.center,
+                          //   children: [
+                          //     ElevatedButton(
+                          //       onPressed: () {
+                          //         Navigator.push(
+                          //             context,
+                          //             MaterialPageRoute(
+                          //                 builder: (c) =>
+                          //                     PrecisePickUpScreen()));
+                          //       },
+                          //       child: Text(
+                          //         "Change Pick Up",
+                          //         style: TextStyle(color: Colors.white),
+                          //       ),
+                          //       style: ElevatedButton.styleFrom(
+                          //         textStyle: TextStyle(
+                          //           fontWeight: FontWeight.bold,
+                          //           color: Colors.white,
+                          //           fontSize: 16,
+                          //         ),
+                          //       ),
+                          //     ),
+                          //     SizedBox(width: 10),
+                          //     ElevatedButton(
+                          //       onPressed: () {},
+                          //       child: Text(
+                          //         "Request a ride",
+                          //         style: TextStyle(color: Colors.white),
+                          //       ),
+                          //       style: ElevatedButton.styleFrom(
+                          //         textStyle: TextStyle(
+                          //           fontWeight: FontWeight.bold,
+                          //           color: Colors.white,
+                          //           fontSize: 16,
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ],
+                          // )
                         ]),
                       )
                     ],
                   ),
                 )),
+
+            //UI FOR SUGGESTED RIDES
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height: suggestedRidesContainerHeight,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                        topRight: Radius.circular(20),
+                        topLeft: Radius.circular(20))),
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Icon(Icons.star, color: Colors.white),
+                            ),
+                            SizedBox(width: 15),
+                            Text(Provider.of<AppInfo>(context)
+                                        .userPickUpLocation !=
+                                    null
+                                ? shortenString(Provider.of<AppInfo>(context)
+                                    .userPickUpLocation!
+                                    .locationName!
+                                    .toString())
+                                : "Not getting address"),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Container(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Icon(Icons.star, color: Colors.white),
+                            ),
+                            SizedBox(width: 15),
+                            Text(Provider.of<AppInfo>(context)
+                                        .userDropOffLocation !=
+                                    null
+                                ? shortenString(Provider.of<AppInfo>(context)
+                                    .userDropOffLocation!
+                                    .locationName!
+                                    .toString())
+                                : "Not getting address"),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Text("SELECT YOUR RIDES",
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedVehicleType = "Car";
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: selectedVehicleType == "Car"
+                                    ? Color(0xFF0D0B81)
+                                    : Color.fromARGB(255, 19, 14, 14),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(25),
+                                child: Column(children: [
+                                  Image.asset("images/car2.png", width: 30),
+                                  SizedBox(height: 8),
+                                  Text("Book a Taxi",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white)),
+                                  SizedBox(height: 2),
+                                  Text(
+                                      tripDirectionDetailsInfo != null
+                                          ? "t ${((AssistantMethods.calculateFareAmountFromOriginToDestination(tripDirectionDetailsInfo!) * 2) * 107).toStringAsFixed(1)}"
+                                          : "null",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey)),
+                                ]),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedVehicleType = "Bike";
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: selectedVehicleType == "Bike"
+                                    ? Color(0xFF0D0B81)
+                                    : Color.fromARGB(255, 19, 14, 14),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(25),
+                                child: Column(children: [
+                                  Image.asset(
+                                    "images/bike.png",
+                                    width: 30,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text("Dispatch Ride",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white)),
+                                  SizedBox(height: 2),
+                                  Text(
+                                      tripDirectionDetailsInfo != null
+                                          ? "t ${((AssistantMethods.calculateFareAmountFromOriginToDestination(tripDirectionDetailsInfo!) * 2) * 107).toStringAsFixed(1)}"
+                                          : "null",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey)),
+                                ]),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Expanded(
+                          child: GestureDetector(
+                              onTap: () {
+                                if (selectedVehicleType != "") {
+                                  saveRideRequestInformation(
+                                      selectedVehicleType);
+
+                                  AlertBox().showAlertDialog(
+                                      context,
+                                      "Booking Ride",
+                                      "No rider available at the moment");
+                                }
+                                setState(() {
+                                  remove_bottomBar = false;
+                                  suggestedRidesContainerHeight = 0;
+                                });
+                              },
+                              child: Container(
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                      color: Color(0xFF0D0B81),
+                                      borderRadius: BorderRadius.circular(10)),
+                                  child: Center(
+                                      child: Text("Book Ride",
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 20))))))
+                    ],
+                  ),
+                ),
+              ),
+            )
             // Positioned(
             //   top: 40,
             //   right: 20,
@@ -499,6 +865,108 @@ class _MapScreenState extends State<MapScreen> {
             // )
           ],
         ),
+        bottomNavigationBar: remove_bottomBar
+            ? null
+            : BottomAppBar(
+                shape: const CircularNotchedRectangle(),
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                color: Color(0xFF0D47A1),
+                child: SizedBox(
+                  height: 80,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (c) => PrecisePickUpScreen()));
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.my_location,
+                                size: 30.0,
+                                color: Colors.white,
+                              ),
+                              SizedBox(height: 5),
+                              Text("Change Pick Up",
+                                  style: TextStyle(color: Colors.white))
+                            ],
+                          )),
+                      GestureDetector(
+                          onTap: () async {
+                            //go to search places screen
+                            var responseFromSearchScreen = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (c) => SearchPlacesScreen()));
+
+                            if (responseFromSearchScreen == "obtainedDropoff") {
+                              setState(() {
+                                openNavigationDrawer = false;
+                                //checking if the user has set destination
+                                setDestinationActive = true;
+                              });
+                            }
+
+                            await drawPolyLineFromOriginToDestination(
+                                darkTheme);
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.directions,
+                                size: 30.0,
+                                color: Colors.white,
+                              ),
+                              SizedBox(height: 5),
+                              Text("Set Destination",
+                                  style: TextStyle(color: Colors.white))
+                            ],
+                          ))
+                    ],
+                  ),
+                ),
+              ),
+        floatingActionButtonLocation:
+            remove_bottomBar ? null : FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: remove_bottomBar
+            ? null
+            : FloatingActionButton(
+                backgroundColor: Color(0xFF0D47A1),
+                onPressed: (() {
+                  if (Provider.of<AppInfo>(context, listen: false)
+                          .userDropOffLocation !=
+                      null) {
+                    showSuggestedRidesContainer();
+                  } else {
+                    Fluttertoast.showToast(
+                        msg: "Please select desination location");
+                  }
+                  // AlertBox().showAlertDialog(
+                  //     context, "Booking Ride", "No rider available at the moment");
+                }),
+                tooltip: 'Request A Ride',
+                shape: const CircleBorder(),
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Icon(Icons.directions_bike_sharp, size: 30),
+                      Icon(Icons.monetization_on, size: 30),
+
+                      Text(
+                        "Fare",
+                        style: TextStyle(fontSize: 10),
+                      )
+                    ]),
+              ),
       ),
     );
   }

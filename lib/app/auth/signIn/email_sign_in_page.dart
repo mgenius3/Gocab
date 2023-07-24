@@ -10,18 +10,23 @@ class EmailSignInPage extends StatelessWidget {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
-          appBar: AppBar(
-            title: Text('Sign in'),
-            elevation: 2.0,
-          ),
+          // resizeToAvoidBottomInset: false,
+          // appBar: AppBar(
+          //   backgroundColor: Colors.white,
+          //   title: Text("Sign In To Gocab",
+          //       style: TextStyle(
+          //           color: Colors.black, fontWeight: FontWeight.bold)),
+          //   centerTitle: true,
+          //   elevation: 0.0,
+          // ),
           body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: EmailSignInForm(
-                auth: Auth(),
-              ),
-            ),
-          )),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: EmailSignInForm(
+            auth: Auth(),
+          ),
+        ),
+      )),
     );
   }
 

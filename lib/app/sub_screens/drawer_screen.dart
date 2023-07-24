@@ -3,14 +3,17 @@ import 'package:Gocab/app/auth/register/drivers/taxi.dart';
 import 'package:Gocab/app/auth/register/drivers/dispatch.dart';
 import 'package:Gocab/services/auth.dart';
 import 'package:Gocab/global/global.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:Gocab/splash.dart';
+import "./profile_screen.dart";
+import "./about_screen.dart";
 
 class DrawerScreen extends StatelessWidget {
   final AuthBase auth = Auth();
+  final getFirebase = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
-    print("13");
-    print(userModelCurrentInfo);
     return Drawer(
       child: Column(
         children: <Widget>[
@@ -26,7 +29,8 @@ class DrawerScreen extends StatelessWidget {
                 : Text(""),
             accountEmail: null, // Remove account email
             currentAccountPicture: CircleAvatar(
-              backgroundImage: NetworkImage(
+              backgroundImage: NetworkImage(userModelCurrentInfo?.image_url
+                      ?.toString() ??
                   'https://img.icons8.com/color/48/circled-user-male-skin-type-4--v1.png'), // Replace with user's profile image
             ),
             decoration: BoxDecoration(
@@ -39,19 +43,19 @@ class DrawerScreen extends StatelessWidget {
                 ),
               ),
             ),
-            otherAccountsPictures: [
-              CircleAvatar(
-                child: Text(
-                  'GO',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                backgroundColor: Colors.blue,
-              ),
-            ],
+            // otherAccountsPictures: [
+            //   CircleAvatar(
+            //     child: Text(
+            //       'USER',
+            //       style: TextStyle(
+            //         color: Colors.white,
+            //         fontSize: 12,
+            //         fontWeight: FontWeight.bold,
+            //       ),
+            //     ),
+            //     backgroundColor: Colors.blue,
+            //   ),
+            // ],
           ),
           Expanded(
             child: ListView(
@@ -59,38 +63,45 @@ class DrawerScreen extends StatelessWidget {
               children: <Widget>[
                 ListTile(
                   leading: Icon(Icons.verified_user),
-                  title: Text('Profile'),
+                  title: Text('Edit Profile'),
                   onTap: () {
-                    Navigator.of(context).pop();
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (c) => ProfileScreen()));
                   },
                 ),
+                // ListTile(
+                //   leading: Icon(Icons.settings),
+                //   title: Text('Settings'),
+                //   onTap: () {
+                //     Navigator.of(context).pop();
+                //   },
+                // ),
+                // ListTile(
+                //   leading: Icon(Icons.border_color),
+                //   title: Text('Feedback'),
+                //   onTap: () {
+                //     Navigator.of(context).pop();
+                //   },
+                // ),
                 ListTile(
-                  leading: Icon(Icons.settings),
-                  title: Text('Settings'),
+                  leading: Icon(Icons.info_sharp),
+                  title: Text('About Us'),
                   onTap: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.border_color),
-                  title: Text('Feedback'),
-                  onTap: () {
-                    Navigator.of(context).pop();
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (c) => AboutPage()));
                   },
                 ),
                 ListTile(
                   leading: Icon(Icons.exit_to_app),
                   title: Text('Logout'),
                   onTap: () {
+                    getFirebase.signOut();
                     Auth().signOut();
+                    Navigator.push(
+                        context, MaterialPageRoute(builder: (c) => Splash()));
                   },
-                ),
-                ListTile(
-                  leading: Icon(Icons.info_sharp),
-                  title: Text('About Us'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                  },
+                  iconColor: Colors.red,
+                  textColor: Colors.red,
                 ),
               ],
             ),
