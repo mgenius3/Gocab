@@ -9,6 +9,8 @@ import 'package:email_validator/email_validator.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:Gocab/app/sub_screens/forgot_password.dart';
 import 'package:Gocab/app/sub_screens/map_screen.dart';
+import 'package:Gocab/Assistants/assistant_method.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class EmailSignInForm extends StatefulWidget {
   EmailSignInForm({required this.auth});
@@ -22,12 +24,23 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
   final _emailTextController = TextEditingController();
   final _passwordTextController = TextEditingController();
 
+  bool loading = false;
+
   void _submit() async {
     try {
+      setState(() {
+        loading = true;
+      });
       await widget.auth.signInWithEmailAndPassword(
           _emailTextController.text.toString(),
           _passwordTextController.text.toString());
+
+      setState(() {
+        loading = false;
+      });
       await Fluttertoast.showToast(msg: "Successfully Logged In");
+
+      AssistantMethods.readCurrentOnlineUserInfo();
 
       Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
         // builder: (context) => BookingPage(),
@@ -35,7 +48,14 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
         fullscreenDialog: true,
       ));
     } catch (e) {
-      await Fluttertoast.showToast(msg: "Unable to sign in:  ${e.toString()}");
+      setState(() {
+        loading = false;
+      });
+      if (e is FirebaseException) {
+        Fluttertoast.showToast(msg: "Unable to sign in: ${e.message}");
+      } else {
+        await Fluttertoast.showToast(msg: "Unable to sign in:  try again");
+      }
     }
   }
 
@@ -82,18 +102,18 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
       ),
       SizedBox(height: 16.0),
       ElevatedButton(
-        onPressed: _submit,
+        style: ElevatedButton.styleFrom(padding: EdgeInsets.all(10)),
+        onPressed: !loading ? _submit : null,
         child: Container(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              IconButton(
-                icon: Icon(Icons.login),
-                onPressed: () {
-                  _submit();
-                },
-              ),
-              Text("Sign In")
+              !loading
+                  ? Text("Sign In", style: TextStyle(fontSize: 24))
+                  : CircularProgressIndicator(
+                      color: Colors.white,
+                      backgroundColor: Color(0xFF0D47A1),
+                    )
             ],
           ),
         ),

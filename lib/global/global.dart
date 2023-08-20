@@ -5,10 +5,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 UserModel? userModelCurrentInfo;
 String userDropOffAddress = "";
 
+String cloudMessagingServerToken = "key=";
+List driversList = [];
 DirectionDetailsInfo? tripDirectionDetailsInfo;
 String driverCarDetails = "";
 String driverName = "";
 String driverPhone = "";
+String driverRatings = "";
 
 double countRatingStars = 0.0;
 String titleStarsRating = "";

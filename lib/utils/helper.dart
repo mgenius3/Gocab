@@ -1,5 +1,5 @@
 String shortenString(String text) {
-  const int maxLength = 40;
+  const int maxLength = 30;
 
   if (text.length <= maxLength) {
     return text;

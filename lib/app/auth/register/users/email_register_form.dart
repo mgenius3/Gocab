@@ -9,6 +9,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:Gocab/app/sub_screens/map_screen.dart';
+import 'package:Gocab/Assistants/assistant_method.dart';
 
 class EmailRegisterForm extends StatefulWidget {
   EmailRegisterForm({required this.auth});
@@ -49,6 +50,8 @@ class _EmailRegisterFormState extends State<EmailRegisterForm> {
           "password": _passwordTextController.text.trim(),
         };
         await widget.auth.createUserWithEmailAndPassword(userMap);
+
+        AssistantMethods.readCurrentOnlineUserInfo();
 
         await Fluttertoast.showToast(msg: "Successfully Registered");
         Navigator.push(context, MaterialPageRoute(builder: (c) => MapScreen()));

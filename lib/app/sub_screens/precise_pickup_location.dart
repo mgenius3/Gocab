@@ -9,6 +9,8 @@ import "package:provider/provider.dart";
 import '../../model/direction.dart';
 import "../../infoHandler/app_info.dart";
 import "../../global/map_key.dart";
+import './search_places_screen_pickup.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class PrecisePickUpScreen extends StatefulWidget {
   const PrecisePickUpScreen({super.key});
@@ -83,6 +85,11 @@ class _PrecisePickUpScreenState extends State<PrecisePickUpScreen> {
   }
 
   @override
+  void initState() {
+    Fluttertoast.showToast(msg: "Move the map to set pick up location");
+  }
+
+  @override
   Widget build(BuildContext context) {
     bool darkTheme =
         MediaQuery.of(context).platformBrightness == Brightness.dark;
@@ -122,6 +129,26 @@ class _PrecisePickUpScreenState extends State<PrecisePickUpScreen> {
               padding: EdgeInsets.only(top: 60, bottom: bottomPaddingOfMap),
               child: Image.asset("images/pick.png", height: 45, width: 45),
             )),
+        Positioned(
+          top: 200,
+          right: 10,
+          left: null,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (c) => SearchPlacesScreenPickUp()));
+            },
+            child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.blue,
+                ),
+                child: Icon(Icons.search, color: Colors.white)),
+          ),
+        ),
         Positioned(
           top: 40,
           right: 20,

@@ -9,23 +9,25 @@ import '../global/global.dart';
 import './progress_dialog.dart';
 import 'package:Gocab/global/map_key.dart';
 import 'dart:developer';
+import '../app/sub_screens/map_screen.dart';
 
-class PlacePredictionTileDesign extends StatefulWidget {
+class PlacePredictionTileDesignPickUp extends StatefulWidget {
   final PredictedPlaces? predictedPlaces;
 
-  PlacePredictionTileDesign({required this.predictedPlaces});
+  PlacePredictionTileDesignPickUp({required this.predictedPlaces});
 
   @override
-  State<PlacePredictionTileDesign> createState() =>
-      _PlacePredictionTileDesignState();
+  State<PlacePredictionTileDesignPickUp> createState() =>
+      _PlacePredictionTileDesignPickUpState();
 }
 
-class _PlacePredictionTileDesignState extends State<PlacePredictionTileDesign> {
+class _PlacePredictionTileDesignPickUpState
+    extends State<PlacePredictionTileDesignPickUp> {
   getPlacesDirectionDetails(String? placeId, context) async {
     showDialog(
         context: context,
         builder: (BuildContext context) => ProgressDialog(
-              message: "Setting up Drop-off..",
+              message: "Setting up Pick-up..",
             ));
 
     String getPlacesDirectionDetailsUrl =
@@ -54,11 +56,12 @@ class _PlacePredictionTileDesignState extends State<PlacePredictionTileDesign> {
           responseApi["result"]["geometry"]["location"]["lng"];
 
       Provider.of<AppInfo>(context, listen: false)
-          .updateDropOffLocationAddress(directions);
+          .updatePickUpLocationAddress(directions);
 
       setState(() {
         userDropOffAddress = directions.locationName!;
       });
+      // Navigator.push(context, MaterialPageRoute(builder: (c) => MapScreen()));
       Navigator.pop(context, "obtainedDropoff");
     }
   }

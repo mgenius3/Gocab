@@ -11,6 +11,7 @@ import 'package:Gocab/app/auth/signIn/email_sign_in_page.dart';
 import 'package:Gocab/app/sub_screens/map_screen.dart';
 import 'package:Gocab/app/sub_screens/search_places_screen.dart';
 import 'package:provider/provider.dart';
+import './infoHandler/app_info.dart';
 
 class Splash extends StatefulWidget {
   const Splash({Key? key}) : super(key: key);
@@ -23,6 +24,11 @@ class _SplashState extends State<Splash> {
 
   startTimer() {
     Timer(Duration(seconds: 3), () async {
+      Provider.of<AppInfo>(context, listen: false)
+          .updateDropOffLocationAddress(null);
+      Provider.of<AppInfo>(context, listen: false)
+          .updatePickUpLocationAddress(null);
+
       if (await FirebaseAuth.instance.currentUser != null) {
         FirebaseAuth.instance.currentUser != null
             ? AssistantMethods.readCurrentOnlineUserInfo()

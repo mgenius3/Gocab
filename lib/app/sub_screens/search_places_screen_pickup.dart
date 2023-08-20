@@ -2,16 +2,17 @@ import 'package:Gocab/Assistants/request_assistant.dart';
 import 'package:flutter/material.dart';
 import "../../model/predicted_places.dart";
 import "package:Gocab/global/map_key.dart";
-import "../../widget/place_prediction.dart";
+import "../../widget/place_prediction_pickup.dart";
 
-class SearchPlacesScreen extends StatefulWidget {
-  const SearchPlacesScreen({Key? key}) : super(key: key);
+class SearchPlacesScreenPickUp extends StatefulWidget {
+  const SearchPlacesScreenPickUp({Key? key}) : super(key: key);
 
   @override
-  State<SearchPlacesScreen> createState() => _SearchPlacesScreenState();
+  State<SearchPlacesScreenPickUp> createState() =>
+      _SearchPlacesScreenPickUpState();
 }
 
-class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
+class _SearchPlacesScreenPickUpState extends State<SearchPlacesScreenPickUp> {
   List<PredictedPlaces> placesPredictedList = [];
   TextEditingController? searchInput;
   bool searching = false;
@@ -64,7 +65,7 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
                 child: Icon(Icons.arrow_back, color: Colors.white),
               ),
               title: Text(
-                "Search & Set dropoff Location",
+                "Search & Set PickUp Location",
                 style: TextStyle(color: Colors.white),
               ),
               elevation: 0.0,
@@ -125,7 +126,7 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
                     ? Expanded(
                         child: ListView.separated(
                         itemBuilder: (context, index) {
-                          return PlacePredictionTileDesign(
+                          return PlacePredictionTileDesignPickUp(
                             predictedPlaces: placesPredictedList[index],
                           );
                         },
