@@ -396,8 +396,6 @@ class _MapScreenState extends State<MapScreen> {
   saveRideRequestInformation(String selectedVehicleType) {
     //1. save the rideRequest information
 
-    print("398");
-
     referenceRideRequest =
         FirebaseDatabase.instance.ref().child("All Ride Requests").push();
 

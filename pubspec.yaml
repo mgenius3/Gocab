@@ -58,8 +58,9 @@ dependencies:
   smooth_star_rating_nsafe: 1.0.0+1
   animated_text_kit: ^4.2.2
   provider: ^6.0.5
-  image_picker: ^1.0.1
+  image_picker: ^1.0.4
   logger: ^2.0.1
+  font_awesome_flutter: ^10.4.0
 
 dev_dependencies:
   flutter_test:

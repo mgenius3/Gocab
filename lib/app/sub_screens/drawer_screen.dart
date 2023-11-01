@@ -8,6 +8,7 @@ import 'package:Gocab/splash.dart';
 import "./profile_screen.dart";
 import "./about_screen.dart";
 import './trips_history_screen.dart';
+import './report.dart';
 import './add_card_sceen.dart';
 
 class DrawerScreen extends StatelessWidget {
@@ -29,35 +30,20 @@ class DrawerScreen extends StatelessWidget {
                     ),
                   )
                 : Text(""),
-            accountEmail: null, // Remove account email
+            accountEmail:
+                Text("${userModelCurrentInfo?.email}"), // Remove account email
+            // currentAccountPicture: CircleAvatar(
+            //   backgroundImage: NetworkImage(userModelCurrentInfo?.image_url
+            //           ?.toString() ??
+            //       '${userModelCurrentInfo?.name.toString()[0]}'), // Replace with user's profile image
+            // ),
             currentAccountPicture: CircleAvatar(
-              backgroundImage: NetworkImage(userModelCurrentInfo?.image_url
-                      ?.toString() ??
-                  'https://img.icons8.com/color/48/circled-user-male-skin-type-4--v1.png'), // Replace with user's profile image
+              child: Text("${userModelCurrentInfo?.name.toString()[0]}",
+                  style: TextStyle(fontSize: 30)),
             ),
             decoration: BoxDecoration(
               color: Color(0xFF0D0B81),
-              // image: DecorationImage(
-              //   fit: BoxFit.fill,
-              //   // image: AssetImage('assets/images/cover.jpg'),
-              //   image: NetworkImage(
-              //     'https://images.unsplash.com/photo-1579267217516-b73084bd79a6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80',
-              //   ),
-              // ),
             ),
-            // otherAccountsPictures: [
-            //   CircleAvatar(
-            //     child: Text(
-            //       'USER',
-            //       style: TextStyle(
-            //         color: Colors.white,
-            //         fontSize: 12,
-            //         fontWeight: FontWeight.bold,
-            //       ),
-            //     ),
-            //     backgroundColor: Colors.blue,
-            //   ),
-            // ],
           ),
           Expanded(
             child: ListView(
@@ -71,14 +57,14 @@ class DrawerScreen extends StatelessWidget {
                         MaterialPageRoute(builder: (c) => ProfileScreen()));
                   },
                 ),
-                ListTile(
-                  leading: Icon(Icons.payment),
-                  title: Text('Payment'),
-                  onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (c) => AddCardScreen()));
-                  },
-                ),
+                // ListTile(
+                //   leading: Icon(Icons.payment),
+                //   title: Text('Payment'),
+                //   onTap: () {
+                //     Navigator.push(context,
+                //         MaterialPageRoute(builder: (c) => AddCardScreen()));
+                //   },
+                // ),
                 ListTile(
                   leading: Icon(Icons.flight),
                   title: Text('My Trips'),
@@ -87,6 +73,14 @@ class DrawerScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                             builder: (c) => TripsHistoryScreen()));
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.chat),
+                  title: Text('Message Us'),
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (c) => ReportPage()));
                   },
                 ),
                 ListTile(

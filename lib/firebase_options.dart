@@ -67,9 +67,11 @@ class DefaultFirebaseOptions {
     messagingSenderId: '463821131261',
     projectId: 'gocab-3ba80',
     storageBucket: 'gocab-3ba80.appspot.com',
-    androidClientId: '463821131261-9qfuarhcc6vgg6ohdu95s5nmknlumgf1.apps.googleusercontent.com',
-    iosClientId: '463821131261-d3kh74f4t1sooieoi9o1rcel7j7jfeb3.apps.googleusercontent.com',
-    iosBundleId: 'com.example.gocab2',
+    androidClientId:
+        '463821131261-9qfuarhcc6vgg6ohdu95s5nmknlumgf1.apps.googleusercontent.com',
+    iosClientId:
+        '463821131261-d3kh74f4t1sooieoi9o1rcel7j7jfeb3.apps.googleusercontent.com',
+    iosBundleId: 'com.logistics.gocab',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -78,8 +80,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '463821131261',
     projectId: 'gocab-3ba80',
     storageBucket: 'gocab-3ba80.appspot.com',
-    androidClientId: '463821131261-9qfuarhcc6vgg6ohdu95s5nmknlumgf1.apps.googleusercontent.com',
-    iosClientId: '463821131261-d3kh74f4t1sooieoi9o1rcel7j7jfeb3.apps.googleusercontent.com',
-    iosBundleId: 'com.example.gocab2',
+    androidClientId:
+        '463821131261-9qfuarhcc6vgg6ohdu95s5nmknlumgf1.apps.googleusercontent.com',
+    iosClientId:
+        '463821131261-d3kh74f4t1sooieoi9o1rcel7j7jfeb3.apps.googleusercontent.com',
+    iosBundleId: 'com.logistics.gocab',
   );
 }

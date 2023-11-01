@@ -1,4 +1,4 @@
-package com.example.gocab2
+package com.logistics.gocab
 
 import io.flutter.embedding.android.FlutterActivity
 
