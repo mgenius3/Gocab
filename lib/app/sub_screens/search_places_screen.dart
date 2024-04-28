@@ -24,8 +24,6 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
       var responseAutoCompleteSearch =
           await RequestAssistant.receiveRequest(urlAutoCompleteSearch);
 
-      print(responseAutoCompleteSearch);
-
       if (responseAutoCompleteSearch == "Error Occured: Failed, No response.") {
         return;
       }
@@ -112,9 +110,7 @@ class _SearchPlacesScreenState extends State<SearchPlacesScreen> {
                                             )))))
                           ],
                         ),
-                        SizedBox(
-                          height: 18.0,
-                        ),
+                        SizedBox(height: 18.0),
                       ],
                     ),
                   ),

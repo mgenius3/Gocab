@@ -30,21 +30,17 @@ class _RateDriverScreenState extends State<RateDriverScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  height: 22,
-                ),
-                Text(
-                  "Rate Trip Experience",
-                  style: TextStyle(
-                    fontSize: 22,
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Divider(height: 2, color: Colors.blue),
-                SizedBox(height: 20),
+                const SizedBox(height: 22),
+                const Text("Rate Trip Experience",
+                    style: TextStyle(
+                      fontSize: 22,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    )),
+                const SizedBox(height: 20),
+                const Divider(height: 2, color: Colors.blue),
+                const SizedBox(height: 20),
                 SmoothStarRating(
                   rating: countRatingStars,
                   allowHalfRating: false,
@@ -82,17 +78,13 @@ class _RateDriverScreenState extends State<RateDriverScreen> {
                     }
                   },
                 ),
-                SizedBox(
-                  height: 10,
-                ),
+                const SizedBox(height: 10),
                 Text(titleStarsRating,
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 30,
                         color: Colors.blue)),
-                SizedBox(
-                  height: 20,
-                ),
+                const SizedBox(height: 20),
                 ElevatedButton(
                     onPressed: () {
                       DatabaseReference rateDriverRef = FirebaseDatabase

@@ -44,7 +44,6 @@ class _PlacePredictionTileDesignPickUpState
 
     if (responseApi["status"] == "OK") {
       Directions directions = Directions();
-      print("$responseApi");
       // directions.locationName = responseApi["result"]["long_name"];
       directions.locationName = responseApi["result"]["formatted_address"];
 

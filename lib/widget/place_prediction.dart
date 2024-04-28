@@ -42,7 +42,6 @@ class _PlacePredictionTileDesignState extends State<PlacePredictionTileDesign> {
 
     if (responseApi["status"] == "OK") {
       Directions directions = Directions();
-      print("$responseApi");
       // directions.locationName = responseApi["result"]["long_name"];
       directions.locationName = responseApi["result"]["formatted_address"];
 
@@ -76,28 +75,20 @@ class _PlacePredictionTileDesignState extends State<PlacePredictionTileDesign> {
         padding: EdgeInsets.all(18.0),
         child: Row(
           children: [
-            Icon(
-              Icons.add_location,
-            ),
-            SizedBox(
-              width: 10,
-            ),
+            Icon(Icons.add_location),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 children: [
                   Text(
                     widget.predictedPlaces?.main_text ?? "",
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontSize: 16),
                   ),
                   Text(
                     widget.predictedPlaces?.secondary_text ?? "",
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ],
               ),

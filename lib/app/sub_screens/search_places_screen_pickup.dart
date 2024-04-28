@@ -25,8 +25,6 @@ class _SearchPlacesScreenPickUpState extends State<SearchPlacesScreenPickUp> {
       var responseAutoCompleteSearch =
           await RequestAssistant.receiveRequest(urlAutoCompleteSearch);
 
-      print(responseAutoCompleteSearch);
-
       if (responseAutoCompleteSearch == "Error Occured: Failed, No response.") {
         return;
       }

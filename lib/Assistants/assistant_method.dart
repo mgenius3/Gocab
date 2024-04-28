@@ -70,7 +70,6 @@ class AssistantMethods {
       if (requestResponse != "Error Occured: Failed, No response.") {
         humanReadableAddress =
             requestResponse["results"][0]["formatted_address"];
-        print(requestResponse);
 
         Directions userPickUpAddress = Directions();
         userPickUpAddress.locationLatitude = position.latitude;
@@ -81,7 +80,7 @@ class AssistantMethods {
             .updatePickUpLocationAddress(userPickUpAddress);
       }
     } catch (err) {
-      print(err);
+      // print(err);
     }
 
     return humanReadableAddress;
@@ -97,8 +96,6 @@ class AssistantMethods {
     // if(responseDirectionApi == "Error Occured: Failed, No response."){
     //   return null;
     // }
-
-    print(responseDirectionApi);
 
     DirectionDetailsInfo directionDetailsInfo = DirectionDetailsInfo();
     directionDetailsInfo.e_points =
@@ -122,8 +119,6 @@ class AssistantMethods {
     print(directionDetailsInfo);
     double timeTravelledFareAmountPerMinute =
         (directionDetailsInfo.duration_value! / 60) * 0.1;
-
-    print(timeTravelledFareAmountPerMinute);
 
     double distanceTravelledFareAmountPerKilometer =
         (directionDetailsInfo.duration_value! / 1000) * 0.1;

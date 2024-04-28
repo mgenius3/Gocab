@@ -32,8 +32,8 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
         loading = true;
       });
       await widget.auth.signInWithEmailAndPassword(
-          _emailTextController.text.toString(),
-          _passwordTextController.text.toString());
+          _emailTextController.text.trim(),
+          _passwordTextController.text.trim());
 
       setState(() {
         loading = false;
@@ -61,11 +61,17 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
 
   List<Widget> _buildChildren() {
     return [
-      Container(child: Image.asset("images/logo.png")),
+      // Container(child: Image.asset("images/logo.png")),
       SizedBox(height: 26),
-      Text(
-        "Sign In",
-        style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+      Container(
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+            color: Colors.blue, borderRadius: BorderRadius.circular(20)),
+        child: Icon(
+          Icons.lock,
+          size: 20,
+          color: Colors.white,
+        ),
       ),
       SizedBox(height: 36),
 
@@ -110,10 +116,13 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
             children: <Widget>[
               !loading
                   ? Text("Sign In", style: TextStyle(fontSize: 24))
-                  : CircularProgressIndicator(
-                      color: Colors.white,
-                      backgroundColor: Color(0xFF0D47A1),
-                    )
+                  : const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        backgroundColor: Color(0xFF0D47A1),
+                      ))
             ],
           ),
         ),
@@ -126,19 +135,7 @@ class _EmailSignInFormState extends State<EmailSignInForm> {
           },
           child: Text('Forgot Password ?')),
       SizedBox(height: 16.0),
-      // ElevatedButton.icon(
-      //   onPressed: () {
-      //     widget.auth.signInWithGoogle();
-      //     // Perform registration with Google logic here
-      //   },
-      //   icon: Image.asset('images/google.png',
-      //       height: 24.0), // Replace with your Google icon
-      //   label: Text('Sign in with Google'),
-      //   style: ElevatedButton.styleFrom(
-      //     primary: Colors.red, // Customize the button background color
-      //     onPrimary: Colors.white, // Customize the button text color
-      //   ),
-      // ),
+
       TextButton(
           child: Text('Need an account? Register'),
           onPressed: () => Navigator.of(context).push(

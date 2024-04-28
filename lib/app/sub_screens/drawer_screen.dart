@@ -57,14 +57,14 @@ class DrawerScreen extends StatelessWidget {
                         MaterialPageRoute(builder: (c) => ProfileScreen()));
                   },
                 ),
-                // ListTile(
-                //   leading: Icon(Icons.payment),
-                //   title: Text('Payment'),
-                //   onTap: () {
-                //     Navigator.push(context,
-                //         MaterialPageRoute(builder: (c) => AddCardScreen()));
-                //   },
-                // ),
+                ListTile(
+                  leading: Icon(Icons.payment),
+                  title: Text('Payment'),
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (c) => AddCardScreen()));
+                  },
+                ),
                 ListTile(
                   leading: Icon(Icons.flight),
                   title: Text('My Trips'),

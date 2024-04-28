@@ -1,46 +1,41 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter_paystack/flutter_paystack.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
 
-class PaymentService {
-  static const String paystackApiUrl = 'https://api.paystack.co/';
+//used to generate a unique reference for payment
+String _getReference() {
+  var platform = (Platform.isIOS) ? 'iOS' : 'Android';
+  final thisDate = DateTime.now().millisecondsSinceEpoch;
+  return 'ChargedFrom${platform}_$thisDate';
+}
 
-  Future<bool> initiatePayment({
-    String? cardNumber,
-    String? cvc,
-    int? expiryMonth,
-    int? expiryYear,
-    int? amount,
-    String? email,
-    String? publicKey,
-  }) async {
-    final String apiUrl = '${paystackApiUrl}transaction/initialize';
+//async method to charge users card and return a response
+Future<bool> chargeCard(BuildContext context,
+    {required PaystackPlugin plugin,
+    required Function showMessage,
+    required int amount}) async {
+  var charge = Charge()
+    ..amount = amount *
+        100 //the money should be in kobo hence the need to multiply the value by 100
+    ..reference = _getReference()
+    ..putCustomField('custom_id',
+        '846gey6w') //to pass extra parameters to be retrieved on the response from Paystack
+    ..email = 'tutorial@email.com';
 
-    Map<String, String> headers = {
-      'Authorization': 'Bearer $publicKey',
-      'Content-Type': 'application/json',
-    };
+  CheckoutResponse response = await plugin.checkout(
+    context,
+    method: CheckoutMethod.card,
+    charge: charge,
+  );
 
-    Map<String, dynamic> body = {
-      'email': email,
-      'amount': amount,
-      'card': {
-        'number': cardNumber,
-        'cvv': cvc,
-        'expiry_month': expiryMonth,
-        'expiry_year': expiryYear,
-      },
-    };
-
-    final response = await http.post(paystackApiUrl as Uri,
-        headers: headers, body: json.encode(body));
-
-    if (response.statusCode == 200) {
-      // Parse the response JSON and check the payment status
-      Map<String, dynamic> responseBody = json.decode(response.body);
-      bool paymentStatus = responseBody['status'];
-      return paymentStatus;
-    } else {
-      throw Exception('Failed to initiate payment');
-    }
+  //check if the response is true or not
+  if (response.status == true) {
+    //you can send some data from the response to an API or use webhook to record the payment on a database
+    showMessage('Payment was successful!!!');
+    return true;
+  } else {
+    //the payment wasn't successsful or the user cancelled the payment
+    showMessage('Payment Failed!!!');
+    return false;
   }
 }

@@ -1,7 +1,6 @@
 import 'package:Gocab/Assistants/assistant_method.dart';
 import 'package:Gocab/app/sub_screens/search_places_screen.dart';
 import 'package:Gocab/widget/progress_dialog.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -29,6 +28,11 @@ import '../../widget/pay_fare_amount_dialog.dart';
 import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 import './rate_driver.dart';
+import 'package:Gocab/localNotifications/notification_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:Gocab/utils/paystack_payment.dart';
+import 'package:flutter_paystack/flutter_paystack.dart';
+import './payment.dart';
 
 Future<void> _makePhoneCall(String url) async {
   if (await canLaunch(url)) {
@@ -46,6 +50,15 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  String publicKey =
+      'pk_test_ieu49ej839u984urenewuwe06eishra'; //pass in the public test key obtained from paystack dashboard here
+  final plugin = PaystackPlugin(); // Create an instance
+
+  //a method to show the message
+  void _showPaymentMessage(String message) {
+    Fluttertoast.showToast(msg: message);
+  }
+
   LatLng? pickLocation;
   loc.Location location = loc.Location();
   String? _address;
@@ -56,9 +69,7 @@ class _MapScreenState extends State<MapScreen> {
   GoogleMapController? newGoogleMapController;
 
   static const CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
-    zoom: 14.4746,
-  );
+      target: LatLng(37.42796133580664, -122.085749655962), zoom: 14.4746);
 
   static const CameraPosition _kLake = CameraPosition(
       bearing: 192.8334901395799,
@@ -114,20 +125,20 @@ class _MapScreenState extends State<MapScreen> {
 
   var logger = Logger();
 
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
   locateUserPosition() async {
     try {
       Position cPosition = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       userCurrentPosition = cPosition;
 
-      print("109 $userCurrentPosition");
       LatLng latLngPosition =
           LatLng(userCurrentPosition!.latitude, userCurrentPosition!.longitude);
 
       CameraPosition cameraPosition =
           CameraPosition(target: latLngPosition, zoom: 15);
-
-      print("116 $cameraPosition");
 
       newGoogleMapController!
           .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
@@ -139,8 +150,6 @@ class _MapScreenState extends State<MapScreen> {
       ///get user from database
       userName = userModelCurrentInfo!.name!;
       userEmail = userModelCurrentInfo!.email!;
-
-      print("131 $userName");
 
       initializeGeoFireListener();
       AssistantMethods.readTripsKeysForOnlineUser(context);
@@ -201,7 +210,6 @@ class _MapScreenState extends State<MapScreen> {
               break;
           }
         } else {
-          print("185");
           Fluttertoast.showToast(msg: "driver is null");
         }
 
@@ -430,6 +438,11 @@ class _MapScreenState extends State<MapScreen> {
 
     referenceRideRequest!.set(userInformationMap);
 
+    int countaccepted = 0;
+    int countarrived = 0;
+    int countontrip = 0;
+    int countended = 0;
+
     tripRidesRequestInfoStreamSubscription =
         referenceRideRequest!.onValue.listen((eventSnap) async {
       if (eventSnap.snapshot.value == null) {
@@ -460,7 +473,12 @@ class _MapScreenState extends State<MapScreen> {
               (eventSnap.snapshot.value as Map)["ratings"].toString();
         });
       }
-
+      if ((eventSnap.snapshot.value as Map)["profile_url"] != null) {
+        setState(() {
+          driverProfileUrl =
+              (eventSnap.snapshot.value as Map)["profile_url"].toString();
+        });
+      }
       if ((eventSnap.snapshot.value as Map)["status"] != null) {
         setState(() {
           userRideRequestStatus =
@@ -478,34 +496,69 @@ class _MapScreenState extends State<MapScreen> {
 
         //status =  accepted
         if (userRideRequestStatus == "accepted") {
-          updateArrivalTimeToUserPickUpLocation(driverCurrentPositionLatLng);
+          countaccepted = countaccepted + 1;
+
+          if (countaccepted <= 1) {
+            updateArrivalTimeToUserPickUpLocation(driverCurrentPositionLatLng);
+            //send notification
+            LocalNotificationService.showRequestNotification(
+                title: "Ride Request Accepted",
+                body: "Driver is on the way",
+                fln: flutterLocalNotificationsPlugin);
+
+            print("countaccepted $countaccepted");
+          }
         }
         //status = arrived
         if (userRideRequestStatus == "arrived") {
-          setState(() {
-            driverRideStatus = "Driver has arrived";
-          });
+          countarrived = countarrived + 1;
+          if (countarrived <= 1) {
+            setState(() {
+              driverRideStatus = "Driver has arrived";
+            });
+
+            //send notification
+            LocalNotificationService.showRequestNotification(
+                title: "Ride Information",
+                body: "Driver has arrived at pickup location",
+                fln: flutterLocalNotificationsPlugin);
+          }
         }
 
         //status = onTrip
         if (userRideRequestStatus == "ontrip") {
-          updateReachingTimeToUserDropOffLocation(driverCurrentPositionLatLng);
+          countontrip = countontrip + 1;
+
+          if (countontrip <= 1) {
+            updateReachingTimeToUserDropOffLocation(
+                driverCurrentPositionLatLng);
+          }
         }
 
         if (userRideRequestStatus == "ended") {
-          if ((eventSnap.snapshot.value as Map)["fareAmount"] != null) {
-            double fareAmount = double.parse(
-                (eventSnap.snapshot.value as Map)["fareAmount"].toString());
+          countended = countended + 1;
 
-            var response = await showDialog(
-                context: context,
-                builder: (BuildContext context) => PayFareAmountDialog(
-                      fareAmount: fareAmount,
-                    ));
+          if (countended <= 1) {
+            if ((eventSnap.snapshot.value as Map)["fareAmount"] != null) {
+              double fareAmount = double.parse(
+                  (eventSnap.snapshot.value as Map)["fareAmount"].toString());
 
-            print(response);
-            if (response == "Cash Paid") {
-              // user can rate the driver now
+              //send notification
+              LocalNotificationService.showRequestNotification(
+                  title: "Ride Ended",
+                  body: "kindly pay your fare price of #$fareAmount",
+                  fln: flutterLocalNotificationsPlugin);
+
+              // var response = Navigator.push(
+              //     context,
+              //     MaterialPageRoute(
+              //         builder: (c) => Payment(
+              //               fareAmount: fareAmount,
+              //             )));
+              // var response = chargeCard(context,
+              //     plugin: plugin,
+              //     showMessage: _showPaymentMessage,
+              //     amount: fareAmount.toInt());
 
               if ((eventSnap.snapshot.value as Map)["driverId"] != null) {
                 String assignedDriverId =
@@ -513,13 +566,37 @@ class _MapScreenState extends State<MapScreen> {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (c) => RateDriverScreen(
+                        builder: (c) => Payment(
+                              fareAmount: fareAmount,
                               assignedDriverId: assignedDriverId,
                             )));
-
-                referenceRideRequest!.onDisconnect();
-                tripRidesRequestInfoStreamSubscription!.cancel();
               }
+
+              referenceRideRequest!.onDisconnect();
+              tripRidesRequestInfoStreamSubscription!.cancel();
+
+              // var response = await showDialog(
+              //     context: context,
+              //     builder: (BuildContext context) => PayFareAmountDialog(
+              //           fareAmount: fareAmount,
+              //         ));
+
+              // if (response == true) {
+              //   if ((eventSnap.snapshot.value as Map)["driverId"] != null) {
+              //     String assignedDriverId =
+              //         (eventSnap.snapshot.value as Map)["driverId"].toString();
+
+              //     Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //             builder: (c) => RateDriverScreen(
+              //                   assignedDriverId: assignedDriverId,
+              //                 )));
+
+              //     referenceRideRequest!.onDisconnect();
+              //     tripRidesRequestInfoStreamSubscription!.cancel();
+              //   }
+              // }
             }
           }
         }
@@ -546,7 +623,7 @@ class _MapScreenState extends State<MapScreen> {
 
       Fluttertoast.showToast(msg: "No online nearest Driver Available");
 
-      Future.delayed(Duration(milliseconds: 4000), () {
+      Future.delayed(const Duration(milliseconds: 4000), () {
         referenceRideRequest!.remove();
         // Navigator.push(context, MaterialPageRoute(builder: (c) => Splash()));
       });
@@ -582,8 +659,6 @@ class _MapScreenState extends State<MapScreen> {
         .child("driverId")
         .onValue
         .listen((eventRideRequestSnapshot) {
-      print("EventSnapshot: ${eventRideRequestSnapshot.snapshot.value}");
-
       if (eventRideRequestSnapshot.snapshot.value != null) {
         if (eventRideRequestSnapshot.snapshot.value != "waiting") {
           showUIForAssignedDriverInfo();
@@ -679,6 +754,7 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     checkIfLocationPermissionAllowed();
     locateUserPosition();
+    plugin.initialize(publicKey: publicKey); // Call using the instance
 
     //----
   }
@@ -1100,7 +1176,7 @@ class _MapScreenState extends State<MapScreen> {
                           onTap: () {
                             if (selectedVehicleType != "") {
                               setState(() {
-                                remove_bottomBar = true;
+                                // remove_bottomBar = true;
                                 suggestedRidesContainerHeight = 0;
                               });
 
@@ -1245,20 +1321,34 @@ class _MapScreenState extends State<MapScreen> {
                         thickness: 1,
                         color: Colors.grey[300],
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
-                              Container(
-                                padding: EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.lightBlue,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(Icons.person, color: Colors.white),
-                              ),
+                              driverProfileUrl != null
+                                  ? Container(
+                                      padding: EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                              driverProfileUrl!), // URL to your image
+                                          fit: BoxFit
+                                              .cover, // Cover the entire container
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const SizedBox())
+                                  : Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.lightBlue,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(Icons.person,
+                                          color: Colors.white),
+                                    ),
                               SizedBox(width: 10),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1384,12 +1474,9 @@ class _MapScreenState extends State<MapScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.directions,
-                                size: 30.0,
-                                color: Colors.white,
-                              ),
-                              SizedBox(height: 5),
+                              Icon(Icons.directions,
+                                  size: 30.0, color: Colors.white),
+                              const SizedBox(height: 5),
                               Text("Set Destination",
                                   style: TextStyle(color: Colors.white))
                             ],
