@@ -50,10 +50,10 @@ android {
         
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
-        versionCode flutterVersionCode.toInteger()
+        // versionCode flutterVersionCode.toInteger()
+        versionCode 2
         versionName flutterVersionName
          minSdkVersion 20
-        
     }
 
 signingConfigs {
